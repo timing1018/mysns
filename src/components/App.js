@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { authService } from 'fBase'
 
 function App() {
-
+  console.log(authService.currentUser);
   const [isLoggedIn, setIsLoggedIn] = useState(authService.currentUser);
 
   return (
