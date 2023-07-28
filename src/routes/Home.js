@@ -1,33 +1,41 @@
 import React, { useState, useEffect } from "react";
 import { dbService } from "fBase";
-import { collection, addDoc, getDocs, query } from "firebase/firestore";
+import { collection, addDoc, query, onSnapshot, orderBy, serverTimestamp } from "@firebase/firestore";
+import Talk from "components/Talk";
 
-const Home = () => {
+const Home = ({ userObj }) => {
   const [talk, setTalk] = useState("");
   const [talks, setTalks] = useState([]);
-  const getTalks =  async () => {
-    const q = query(collection(dbService, "talks"));
-    const querySnapshot = await getDocs(q);
-    querySnapshot.forEach((doc) => {
-    const talkObj = {
-    ...doc.data(),
-    id: doc.id,
-    }
-    setTalks(prev => [talkObj, ...prev]);
-    });
-  };
+  const [attachment, setAttachment] = useState();
 
   useEffect(() => {
-    getTalks();
+    // 실시간으로 데이터를 데이터베이스에서 가져오기
+ 
+    const q = query(collection(dbService, "talks"), orderBy("createdAt", "desc"))
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const nextTalks = querySnapshot.docs.map((doc) => {
+        return {
+          id: doc.id,
+          ...doc.data(),
+        }
+      })
+      setTalks(nextTalks);
+    })
+ 
+    return () => {
+      unsubscribe()
+    }
   }, []);
 
   const onSubmit = async(e) => {
     e.preventDefault();
-
-    await addDoc(collection(dbService, "talks"),{
-      talk,
-      createAt: Date.now(),
+    
+      const docRef = await addDoc(collection(dbService, "talks"),{
+      text: talk,
+      createdAt: serverTimestamp(),
+      creatorId: userObj.uid,
     });
+    console.log('Document written with ID: ', docRef.id)
     setTalk("");
   };
 
@@ -40,7 +48,24 @@ const Home = () => {
   // const onChange = (e) => {
   //   setNweet(e.target.value);
   // };
-  console.log(talks);
+  // console.log(talks);
+
+  const onFileChange = (e) => {
+    const {
+      target: { files },
+    } = e;
+    const theFile = files[0]
+    const reader = new FileReader();
+    reader.onloadend = (finishedEvent) => {
+      const {
+        currentTarget: { result },
+      } = finishedEvent;
+      setAttachment(result);
+    };
+    reader.readAsDataURL(theFile);
+  };
+
+  const onClearAttachment = () => setAttachment(null);
 
   return (
     <div>
@@ -52,13 +77,24 @@ const Home = () => {
           placeholder="Please enter your message." 
           maxLength={120} 
         />
+        <input onChange={onFileChange} type="file" accept="image/*" />
         <input type="submit" value="talk" />
+        {attachment && (
+          <div>
+            <img src={attachment} width="50px" height="50px" />
+            <button onClick={onClearAttachment}>Clear</button>
+          </div>
+          
+        )}
       </form>
       <div>
         {talks.map((talk) => (
-          <div key={talk.id}>
-            <h4>{talk.talk}</h4>
-          </div>
+          <Talk 
+            key={talk.id}
+            talkObj={talk}
+            isOwner={talk.creatorId === userObj.uid}
+          />
+
         ))}
       </div>
     </div>
