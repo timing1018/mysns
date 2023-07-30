@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { dbService } from "fBase";
+import { dbService, storageService } from "fBase";
 import { collection, addDoc, query, onSnapshot, orderBy, serverTimestamp } from "@firebase/firestore";
 import Talk from "components/Talk";
+import { fileRef, uploadString, ref } from '@firebase/storage';
+import { v4 as uuidv4 } from 'uuid';
 
 const Home = ({ userObj }) => {
   const [talk, setTalk] = useState("");
@@ -30,13 +32,17 @@ const Home = ({ userObj }) => {
   const onSubmit = async(e) => {
     e.preventDefault();
     
-      const docRef = await addDoc(collection(dbService, "talks"),{
-      text: talk,
-      createdAt: serverTimestamp(),
-      creatorId: userObj.uid,
-    });
-    console.log('Document written with ID: ', docRef.id)
-    setTalk("");
+    const fileRef = ref(storageService, `${userObj.uid}/${uuidv4()}`);
+    const response = await uploadString(fileRef, attachment, "data_url");
+
+    console.log(response);
+    //   const docRef = await addDoc(collection(dbService, "talks"),{
+    //   text: talk,
+    //   createdAt: serverTimestamp(),
+    //   creatorId: userObj.uid,
+    // });
+    // console.log('Document written with ID: ', docRef.id)
+    // setTalk("");
   };
 
   const onChange = (e) => {
