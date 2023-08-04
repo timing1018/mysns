@@ -2,13 +2,14 @@ import React, { useState, useEffect } from "react";
 import { dbService, storageService } from "fBase";
 import { collection, addDoc, query, onSnapshot, orderBy, serverTimestamp } from "@firebase/firestore";
 import Talk from "components/Talk";
-import { fileRef, uploadString, ref } from '@firebase/storage';
+import { uploadString, ref, getDownloadURL } from '@firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
+
 
 const Home = ({ userObj }) => {
   const [talk, setTalk] = useState("");
   const [talks, setTalks] = useState([]);
-  const [attachment, setAttachment] = useState();
+  const [attachment, setAttachment] = useState("");
 
   useEffect(() => {
     // 실시간으로 데이터를 데이터베이스에서 가져오기
@@ -31,18 +32,29 @@ const Home = ({ userObj }) => {
 
   const onSubmit = async(e) => {
     e.preventDefault();
-    
-    const fileRef = ref(storageService, `${userObj.uid}/${uuidv4()}`);
-    const response = await uploadString(fileRef, attachment, "data_url");
 
-    console.log(response);
-    //   const docRef = await addDoc(collection(dbService, "talks"),{
-    //   text: talk,
-    //   createdAt: serverTimestamp(),
-    //   creatorId: userObj.uid,
-    // });
-    // console.log('Document written with ID: ', docRef.id)
-    // setTalk("");
+    let attachmentUrl  = "";
+
+    if (attachment !== "") {
+      const fileRef  = ref(storageService, `${userObj.uid}/${uuidv4()}`);
+
+      const response = await uploadString(fileRef, attachment, "data_url");
+      console.log(response);
+      
+      attachmentUrl  = await getDownloadURL(response.ref);
+    }
+
+    const talkPosting  = {
+      talk,
+      createdAt: serverTimestamp(),
+      creatorId: userObj.uid,
+      attachmentUrl ,
+    };
+    
+    await addDoc(collection(dbService, "talks"), talkPosting);
+
+    setTalk("");
+    setAttachment("");
   };
 
   const onChange = (e) => {
@@ -71,7 +83,8 @@ const Home = ({ userObj }) => {
     reader.readAsDataURL(theFile);
   };
 
-  const onClearAttachment = () => setAttachment(null);
+  // const onClearAttachment = () => setAttachment(null);
+  const onClearAttachment = () => { setAttachment("") }
 
   return (
     <div>
@@ -100,7 +113,6 @@ const Home = ({ userObj }) => {
             talkObj={talk}
             isOwner={talk.creatorId === userObj.uid}
           />
-
         ))}
       </div>
     </div>
