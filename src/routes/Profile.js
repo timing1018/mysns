@@ -4,7 +4,7 @@ import { useHistory } from "react-router-dom";
 import { collection, getDocs, query, where, orderBy } from "@firebase/firestore";
 import { updateProfile } from "@firebase/auth";
 
-const Profile = ({ userObj }) => {
+const Profile = ({ userObj, refreshUser }) => {
   const history = useHistory();
   const [newDisplayName, setNewDisplayName] = useState(userObj.displayName);
   const onLogOutClick = () => {
@@ -21,8 +21,12 @@ const Profile = ({ userObj }) => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    if(userObj.displayName !== newDisplayName) {
-      await updateProfile(userObj, { displayName: newDisplayName });
+    // if(userObj.displayName !== newDisplayName) {
+    //   await updateProfile(userObj, { displayName: newDisplayName });
+    // }
+    if(userObj.displayName !== newDisplayName){
+      await updateProfile(authService.currentUser, { displayName: newDisplayName });
+      refreshUser();
     }
   };
 
@@ -45,6 +49,7 @@ const Profile = ({ userObj }) => {
       console.log(doc.id, "=>", doc.data());
     });
   };
+  
   useEffect(() => {
     getMyTalks();
   }, []);
