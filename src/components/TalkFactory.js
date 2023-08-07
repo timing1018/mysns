@@ -1,14 +1,20 @@
 import React, { useState } from "react";
 import { v4 as uuidv4 } from 'uuid';
 import { dbService, storageService } from "fBase";
-import { collection, addDoc, query, onSnapshot, orderBy, serverTimestamp } from "@firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "@firebase/firestore";
 import { uploadString, ref, getDownloadURL } from '@firebase/storage';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus, faTimes } from "@fortawesome/free-solid-svg-icons";
 
 const TalkFactory = ({ userObj }) => {
   const [talk, setTalk] = useState("");
   const [attachment, setAttachment] = useState("");
 
   const onSubmit = async(e) => {
+    if (talk === "") {
+      return;
+    }
+
     e.preventDefault();
 
     let attachmentUrl  = "";
@@ -22,14 +28,14 @@ const TalkFactory = ({ userObj }) => {
       attachmentUrl  = await getDownloadURL(response.ref);
     }
 
-    const talkPosting  = {
-      talk,
+    const talkObj  = {
+      text: talk,
       createdAt: serverTimestamp(),
       creatorId: userObj.uid,
-      attachmentUrl ,
+      attachmentUrl,
     };
     
-    await addDoc(collection(dbService, "talks"), talkPosting);
+    await addDoc(collection(dbService, "talks"), talkObj);
 
     setTalk("");
     setAttachment("");
@@ -41,10 +47,6 @@ const TalkFactory = ({ userObj }) => {
     } = e;
     setTalk(value);
   };
-  // const onChange = (e) => {
-  //   setNweet(e.target.value);
-  // };
-  // console.log(talks);
 
   const onFileChange = (e) => {
     const {
@@ -61,24 +63,46 @@ const TalkFactory = ({ userObj }) => {
     reader.readAsDataURL(theFile);
   };
 
-  // const onClearAttachment = () => setAttachment(null);
   const onClearAttachment = () => { setAttachment("") }
 
   return (
-    <form onSubmit={onSubmit}>
+    <form onSubmit={onSubmit} className="factoryForm">
+      <div className="factoryInput__container">
         <input 
+          className="factoryInput__input"
           value={talk} 
           onChange={onChange} 
           type="text" 
           placeholder="Please enter your message." 
           maxLength={120} 
         />
-        <input onChange={onFileChange} type="file" accept="image/*" />
-        <input type="submit" value="talk" />
+        <input type="submit" value="&rarr;" className="factoryInput__arrow" />
+      </div>
+      <label htmlFor="attach-file" className="factoryInput__label">
+        <span>Add photos</span>
+        <FontAwesomeIcon icon={faPlus} />
+      </label>
+      <input 
+        id="attach-file"
+        onChange={onFileChange} 
+        type="file" 
+        accept="image/*"
+        style={{
+          opacity: 0,
+        }}
+      />
         {attachment && (
-          <div>
-            <img src={attachment} width="50px" height="50px" />
-            <button onClick={onClearAttachment}>Clear</button>
+          <div className="factoryForm__attachment">
+            <img 
+              src={attachment} 
+              style={{
+                backgroundImage: attachment,
+              }}
+            />
+            <div className="factoryForm__clear" onClick={onClearAttachment}>
+              <span>Remove</span>
+              <FontAwesomeIcon icon={faTimes} />
+            </div>
           </div>
         )}
     </form>

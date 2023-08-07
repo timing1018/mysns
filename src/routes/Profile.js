@@ -7,6 +7,7 @@ import { updateProfile } from "@firebase/auth";
 const Profile = ({ userObj, refreshUser }) => {
   const history = useHistory();
   const [newDisplayName, setNewDisplayName] = useState(userObj.displayName);
+  
   const onLogOutClick = () => {
     authService.signOut();
     history.push("/");
@@ -21,9 +22,6 @@ const Profile = ({ userObj, refreshUser }) => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    // if(userObj.displayName !== newDisplayName) {
-    //   await updateProfile(userObj, { displayName: newDisplayName });
-    // }
     if(userObj.displayName !== newDisplayName){
       await updateProfile(authService.currentUser, { displayName: newDisplayName });
       refreshUser();
@@ -31,13 +29,6 @@ const Profile = ({ userObj, refreshUser }) => {
   };
 
   const getMyTalks = async() => {
-  //   const talks = await dbService
-  //     .collection("talks")
-  //     .where("creatorId", "==", `${userObj.uid}`)
-  //     .orderBy("createdAt")
-  //     .get();
-  //     console.log(talks.docs.map((doc) => doc.data()));
-  // };
     const q = query(
       collection(dbService, "talks"),
       where("creatorId", "==", userObj.uid),
@@ -55,19 +46,30 @@ const Profile = ({ userObj, refreshUser }) => {
   }, []);
   
   return (
-    <>
-      <form onSubmit={onSubmit}>
+    <div className="container">
+      <form onSubmit={onSubmit} className="profileForm">
         <input
           onChange={onChange}
-          type="text" 
+          type="text"
+          autoFocus
           placeholder="Display name"
           value={newDisplayName} 
+          className="formInput"
         />
-        <input type="submit" placeholder="Update Profile" />
+        <input 
+          type="submit" 
+          placeholder="Update Profile"
+          className="formBtn"
+          style={{
+            marginTop: 10,
+          }}
+        />
       </form>
-      <button onClick={onLogOutClick}>Log Out</button>
-    </>
-  )
+      <span className="formBtn cancelBtn logOut" onClick={onLogOutClick}>
+        Log Out
+      </span>
+    </div>
+  );
 };
 
 export default Profile;

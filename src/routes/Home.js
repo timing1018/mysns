@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { dbService, storageService } from "fBase";
-import { collection, addDoc, query, onSnapshot, orderBy, serverTimestamp } from "@firebase/firestore";
+import { dbService } from "fBase";
+import { collection, query, onSnapshot, orderBy } from "@firebase/firestore";
 import Talk from "components/Talk";
 import TalkFactory from "components/TalkFactory";
 
@@ -27,14 +27,14 @@ const Home = ({ userObj }) => {
   }, []);
 
   return (
-    <div>
+    <div className="container">
       <TalkFactory userObj={userObj} />
-      <div>
+      <div style={{ marginTop: 30 }}>
         {talks.map((talk) => (
           <Talk 
             key={talk.id}
             talkObj={talk}
-            isOwner={talk.creatorId === userObj.uid}
+            isOwner={userObj && talk.creatorId === userObj.uid}
           />
         ))}
       </div>
